@@ -10,7 +10,14 @@ This project is a Django application featuring a RAG model as its primary compon
 
 After downloading the folder, create a virtual environment and activate it. Once the virtual environment is activated, execute the commands below to install all the required libraries:
 
-```bash
-pip install -r requirements.txt
+`pip install -r requirements.txt`
+
 Once all the necessary libraries are installed, navigate to the cliamnotes directory and run the following commands:
-python manage.py makemigrations
+
+`python manage.py makemigrations`
+
+`python manage.py migrate`
+
+After the migration is complete, run the application using:
+
+`python manage.py runserver`
