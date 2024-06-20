@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 8px;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #a2d9ff 0%, #e3f3ff 100%);
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .container {
+            background: #fff;
+            padding: 30px 40px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            width: calc(100% - 80px);
+            max-width: 100%;
+            margin: 20px auto;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #4a90e2;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        form button {
+            background: #4a90e2;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: background 0.3s ease;
+        }
+        form button:hover {
+            background: #357abd;
+        }
+        .response {
+            background: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            text-align: left;
+            margin-top: 20px;
+            overflow: auto;
+            max-height: 300px;
+        }
+        .response strong {
+            margin: 0;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .status-message {
+            font-size: 18px;
+            color: #4a90e2;
+            margin-top: 20px;
+        }
+        .saved-data {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        .saved-data pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+    <script>
+        function showStatusMessage(message) {
+            var statusMessage = document.getElementById('status-message');
+            statusMessage.innerHTML = message;
+            statusMessage.style.display = 'block';
+        }
+
+        function hideStatusMessage() {
+            var statusMessage = document.getElementById('status-message');
+            statusMessage.style.display = 'none';
+        }
+
+        function saveTableData() {
+            var table = document.querySelector("table");
+            var rows = table.querySelectorAll("tr");
+            var tableData = [];
+
+            rows.forEach((row, index) => {
+                if (index === 0) return; // Skip the header row
+                var rowData = [];
+                var cells = row.querySelectorAll("textarea");
+                cells.forEach(cell => {
+                    rowData.push(cell.value.trim());
+                });
+                tableData.push(rowData);
+            });
+
+            fetch("{% url 'save_table_data' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({ data: tableData })
+    })
+    .then(response => response.json())
+    .then(data => {
+        
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Error saving table data.");
+    });
+        }
+
+        
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Choose Model and Upload the Files</h1>
+        <form method="post" enctype="multipart/form-data" onsubmit="showStatusMessage('Processing...');">
+            {% csrf_token %}
+            <label for="model">Select Model:&nbsp;&nbsp;</label>
+            <select name="model" id="model">
+                <option value="llama3:latest">Llama3</option>
+                <option value="falcon2:latest">Falcon2</option>
+                <option value="gemma:latest">Gemma</option>
+                <option value="mistral:latest">Mistral</option>
+                <option value="phi3:latest">Phi3</option>
+            </select>
+            <br><br>
+            <label for="document">Upload Document:</label>
+            <input type="file" name="document" id="document"><br><br>
+            <label for="question">Upload Questions:</label>
+            <input type="file" name="question" id="question"><br><br>
+            <button type="submit" name="upload">Upload</button>
+
+            {% if entry_list %}
+            <h2>Questions from Uploaded File</h2>
+            <table style="width: 100%;">
+                <tr>
+                    <th>Variable</th>
+                    <th>Question Head</th>
+                    <th>Entity Context</th>
+                    <th>Document Type</th>
+                    <th>Output Format</th>
+                    <th>Gpt Instruction</th>
+                    <th>Final Prompt</th>
+                </tr>
+                {% for item in entry_list %}
+                <tr>
+                    <td><textarea name="variable_{{ forloop.counter0 }}" id="variable_{{ forloop.counter0 }}">{{ item.0 }}</textarea></td>
+                    <td><textarea name="question_head_{{ forloop.counter0 }}" id="question_head_{{ forloop.counter0 }}">{{ item.1 }}</textarea></td>
+                    <td><textarea name="entity_context_{{ forloop.counter0 }}" id="entity_context_{{ forloop.counter0 }}">{{ item.2 }}</textarea></td>
+                    <td><textarea name="document_type_{{ forloop.counter0 }}" id="document_type_{{ forloop.counter0 }}">{{ item.3 }}</textarea></td>
+                    <td><textarea name="output_format_{{ forloop.counter0 }}" id="output_format_{{ forloop.counter0 }}">{{ item.4 }}</textarea></td>
+                    <td><textarea name="gpt_instruction_{{ forloop.counter0 }}" id="gpt_instruction_{{ forloop.counter0 }}">{{ item.5 }}</textarea></td>
+                    <td><textarea name="final_prompt_{{ forloop.counter0 }}" id="final_prompt_{{ forloop.counter0 }}">{{ item.8 }}</textarea></td>
+                </tr>
+                {% endfor %}
+            </table>
+            <button type="button" name="save" onclick="saveTableData()">Save</button>
+            {% endif %}
+        </form>
+
+        {% if request.session.text and request.session.question %}
+            <form method="post" onsubmit="showStatusMessage('Getting answers...');">
+                {% csrf_token %}
+                <button type="submit" name="get_answers">Get Answers</button>
+            </form>
+        {% endif %}
+        <div id="status-message" class="status-message" style="display: none;"></div>
+        {% if response %}
+            <h2>Answers:</h2>
+            <div class="response">
+                {% for item in response %}
+                    <strong>Question:</strong> {{ item.question }}<br>
+                    <strong>Answer:</strong><br>{{ item.answer|linebreaksbr|safe }}
+                {% endfor %}
+            </div>
+            <script>
+                hideStatusMessage();
+            </script>
+        {% endif %}
+        <div id="saved-data" class="saved-data" style="display: none;"></div>
+    </div>
+</body>
+</html>
